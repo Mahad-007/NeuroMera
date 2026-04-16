@@ -1,0 +1,70 @@
+NEUROMERA - WHAT WAS WRONG & WHAT'S FIXED
+==========================================
+
+Hi! I reviewed your notebook and found why predictions were always wrong
+even though accuracy looked good. Here's the short version:
+
+
+WHAT WAS BROKEN (3 things)
+---------------------------
+
+1. STOPWORD REMOVAL WAS KILLING YOUR MODEL
+   You were removing common words like "not", "no", "never" before
+   feeding text to BERT. So "I am NOT happy" became just "happy" and
+   got classified as joy. This is fine for SVM/TF-IDF models, but BERT
+   needs the full sentence to understand meaning. This is why switching
+   models or datasets didn't help - the bug was in the preprocessing,
+   not the model.
+
+2. THE TRAINING STEP WAS MISSING
+   The notebook had TrainingArguments and Dataset set up, but never
+   actually called trainer.train(). The Trainer object was never
+   created. So the model was never trained in the notebook.
+
+3. PREDICTION USED DIFFERENT PREPROCESSING THAN TRAINING
+   Training cleaned text one way, but the predict function cleaned it
+   a different way (different max_length, different text cleaning).
+   The model saw different input at prediction time than what it
+   learned from.
+
+
+WHAT'S FIXED (NeuroMera_Fixed.ipynb)
+--------------------------------------
+
+- Raw text goes directly to BERT (no stopword removal)
+- Training actually runs (Trainer + trainer.train() included)
+- Prediction uses the exact same processing as training
+- Label mapping (anger/fear/joy/love/sadness/surprise) is saved
+  inside the model, so it works after save/load without needing
+  the original CSV
+
+
+HOW TO RUN IT
+--------------
+
+1. Open NeuroMera_Fixed.ipynb in Google Colab
+
+2. Enable GPU:  Runtime > Change runtime type > T4 GPU
+
+3. In Step 1, update the CSV_PATH to point to your dataset on
+   Google Drive. Your CSV needs exactly 2 columns:
+
+      text,label
+      "i feel so happy today",joy
+      "this makes me angry",anger
+      ...
+
+   Labels must be one of: sadness, love, anger, joy, fear, surprise
+
+4. Click:  Runtime > Run all
+
+5. Wait ~20 minutes for training to finish (Step 4)
+
+6. Model gets saved to Google Drive automatically (Step 6)
+
+7. Next time you just want to predict without retraining,
+   skip to Step 7 and run from there
+
+
+That's it. The notebook is designed to run top-to-bottom with no
+extra steps needed.
